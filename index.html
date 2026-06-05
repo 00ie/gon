@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>gon</title>
+  <link rel="icon" type="image/png" href="assets/2.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+  <meta name="theme-color" content="#030304">
+  <style>
+    :root {
+      --bg: #030304;
+      --card-bg: rgba(12, 12, 14, 0.5);
+      --bd: rgba(255, 255, 255, 0.09);
+      --text: #fff;
+      --muted: #555;
+      --muted2: #777;
+      --online: #23a559;
+      --idle: #f0b232;
+      --dnd: #f23f43;
+      --offline: #80848e;
+      --ease: cubic-bezier(0.23, 1, 0.32, 1);
+      --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+      --radius: 28px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    ::-webkit-scrollbar { display: none; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      width: 100vw;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 70px 20px 40px;
+      cursor: default;
+      user-select: none;
+    }
+
+    #bg-video {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+      filter: brightness(0.28) blur(18px) saturate(0.6);
+      transform: scale(1.08);
+    }
+
+    .noise {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      opacity: 0.02;
+    }
+
+    .navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 54px;
+      z-index: 200;
+    }
+
+    .nb-blur {
+      position: absolute;
+      inset: 0;
+      backdrop-filter: blur(20px) saturate(1.8);
+      -webkit-backdrop-filter: blur(20px) saturate(1.8);
+      background: rgba(12, 12, 14, 0.6);
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+
+    .nb-inner {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 100%;
+      padding: 0 clamp(14px, 3vw, 28px);
+      gap: 12px;
+    }
+
+    .nb-left { display: flex; align-items: center; gap: 12px; }
+
+    .nb-logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: rgba(255,255,255,.9);
+      text-transform: lowercase;
+      letter-spacing: -.01em;
+      position: relative;
+    }
+
+    .nb-logo::after {
+      content: '|';
+      animation: blink 1s step-end infinite;
+      color: rgba(255,255,255,0.35);
+      margin-left: 1px;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .nb-sep { width: 1px; height: 15px; background: rgba(255,255,255,0.1); }
+
+    .nb-cnl {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 24px;
+      padding: 5px 12px 5px 6px;
+      text-decoration: none;
+      transition: all 0.25s var(--ease);
+      backdrop-filter: blur(8px);
+    }
+
+    .nb-cnl:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.22);
+      transform: translateY(-1px);
+    }
+
+    .nb-cnl-icon {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+
+    .nb-cnl-info { display: flex; flex-direction: column; gap: 1px; }
+
+    .nb-cnl-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.58rem;
+      font-weight: 700;
+      color: rgba(255,255,255,.88);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      line-height: 1;
+    }
+
+    .nb-cnl-stats {
+      font-size: 0.48rem;
+      color: var(--muted2);
+      letter-spacing: 0.04em;
+      line-height: 1;
+    }
+
+    .nb-cnl-stats .dot-green {
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--online);
+      margin-right: 3px;
+      vertical-align: middle;
+    }
+
+    .nb-join {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(35,165,89,0.18);
+      border: 1px solid rgba(35,165,89,0.35);
+      border-radius: 20px;
+      padding: 3px 9px;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.48rem;
+      font-weight: 700;
+      color: #4ade80;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      transition: all 0.2s;
+      margin-left: 4px;
+    }
+
+    .nb-cnl:hover .nb-join {
+      background: rgba(35,165,89,0.28);
+      border-color: rgba(35,165,89,0.55);
+    }
+
+    .audio-bar { display: flex; align-items: center; gap: 14px; }
+
+    .track-info { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+
+    .track-name {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.85);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      white-space: nowrap;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .track-artist { font-size: 0.58rem; font-weight: 400; color: var(--muted2); white-space: nowrap; }
+
+    .track-time {
+      font-size: 0.52rem;
+      font-weight: 500;
+      color: rgba(255,255,255,0.55);
+      white-space: nowrap;
+      font-family: 'DM Sans', sans-serif;
+      letter-spacing: 0.04em;
+    }
+
+    .btn-play {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,.85);
+      cursor: pointer;
+      font-size: 0.9rem;
+      padding: 0;
+      width: 24px;
+      flex-shrink: 0;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-play:hover { color: #fff; transform: scale(1.1); }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 4px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 4px;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: #fff;
+      cursor: pointer;
+      margin-top: -4.5px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.4);
+      transition: transform 0.15s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+    #seek { width: clamp(80px, 14vw, 130px); height: 4px; }
+    #vl { width: clamp(50px, 8vw, 70px); height: 4px; }
+
+    .stage {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 20px;
+      flex-wrap: wrap;
+      padding: 0 10px;
+      perspective: 1200px;
+    }
+
+    .card {
+      position: relative;
+      width: clamp(200px, 22vw, 240px);
+      background: var(--card-bg);
+      backdrop-filter: blur(24px) saturate(1.8);
+      -webkit-backdrop-filter: blur(24px) saturate(1.8);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transform-style: preserve-3d;
+      will-change: transform;
+      transition:
+        border-color 0.35s var(--ease),
+        box-shadow 0.4s var(--ease),
+        transform 0.4s var(--ease),
+        background 0.4s var(--ease);
+      overflow: visible;
+      animation: cardEnter 0.55s var(--ease-spring) backwards;
+      box-shadow: 0 0 20px rgba(255,255,255,0.08);
+    }
+
+    .card:hover {
+      box-shadow: 0 0 45px rgba(255,255,255,0.25), 0 25px 50px -12px rgba(0,0,0,0.7);
+      border-color: rgba(255,255,255,0.32);
+    }
+
+    @keyframes cardEnter {
+      from { opacity: 0; transform: translateY(28px) scale(0.92); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .glare {
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius);
+      pointer-events: none;
+      z-index: 10;
+      opacity: 0;
+      background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.18) 0%, transparent 65%);
+      transition: opacity 0.2s ease-out;
+    }
+
+    .ci {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 26px 16px 20px;
+      gap: 0;
+    }
+
+    .aw {
+      position: relative;
+      width: clamp(68px, 9vw, 78px);
+      height: clamp(68px, 9vw, 78px);
+      margin-bottom: 14px;
+      transition: transform 0.4s var(--ease-spring);
+    }
+
+    .card:hover .aw { transform: scale(1.05); }
+
+    .av-wrapper {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      padding: 2px;
+      background: rgba(255,255,255,0.12);
+      transition: background 0.3s;
+    }
+
+    .card:hover .av-wrapper { background: rgba(255,255,255,0.2); }
+
+    .av {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(255,255,255,0.15);
+      background: #111;
+      transition: all 0.3s;
+    }
+
+    .sd {
+      position: absolute;
+      bottom: 4px; right: 4px;
+      width: 15px; height: 15px;
+      border-radius: 50%;
+      border: 2.5px solid var(--bg);
+      background: var(--offline);
+      transition: all 0.3s;
+      z-index: 3;
+    }
+
+    .sd.online { background: var(--online); box-shadow: 0 0 10px rgba(35,165,89,0.6); }
+    .sd.idle { background: var(--idle); box-shadow: 0 0 10px rgba(240,178,50,0.5); }
+    .sd.dnd { background: var(--dnd); box-shadow: 0 0 10px rgba(242,63,67,0.5); }
+
+    .nm {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.1rem;
+      margin-bottom: 4px;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      text-align: center;
+      cursor: pointer;
+      transition: text-shadow 0.2s ease;
+    }
+
+    .nm:hover { text-shadow: 0 0 12px rgba(255,255,255,0.6); }
+
+    .un {
+      font-size: 0.7rem;
+      color: var(--muted2);
+      margin-bottom: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: color 0.15s ease, background 0.15s ease;
+      padding: 3px 8px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0);
+    }
+
+    .un:hover { color: #fff; background: rgba(255,255,255,0.08); }
+
+    .owner-tag {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-family: 'Syne', sans-serif;
+      font-size: 0.55rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.9);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 10px;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .owner-tag:hover {
+      background: rgba(255,255,255,0.18);
+      border-color: rgba(255,255,255,0.45);
+    }
+
+    .expand {
+      width: 100%;
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: max-height 0.55s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease, padding 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 0 4px;
+    }
+
+    .card:hover .expand { max-height: 400px; opacity: 1; padding-bottom: 4px; }
+
+    .acc-age {
+      font-size: 0.55rem;
+      font-weight: 400;
+      color: var(--muted);
+      margin-top: 4px;
+      letter-spacing: 0.03em;
+      text-align: center;
+    }
+
+    .activity-block {
+      width: 100%;
+      padding: 8px 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      font-size: 0.6rem;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.4;
+      text-align: left;
+    }
+
+    .activity-block .act-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.5rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 3px;
+    }
+
+    .activity-block .act-name { color: rgba(255,255,255,0.92); font-weight: 500; }
+
+    .social-row {
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      width: 100%;
+      margin-top: 4px;
+      justify-content: center;
+    }
+
+    .social-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      text-decoration: none;
+      transition: all 0.25s var(--ease-spring);
+      cursor: pointer;
+    }
+
+    .social-btn:hover {
+      background: rgba(255,255,255,0.12);
+      border-color: rgba(255,255,255,0.2);
+      transform: scale(1.13) translateY(-2px);
+    }
+
+    .social-btn:active { transform: scale(0.96); }
+
+    .social-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+    .social-btn img { width: 14px; height: 14px; flex-shrink: 0; object-fit: contain; }
+
+    .skel {
+      background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 12px;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .location-wrap {
+      position: relative;
+      z-index: 10;
+      margin-top: clamp(18px, 3.5vw, 26px);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(12,12,14,0.5);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 34px;
+      padding: 8px 20px;
+    }
+
+    .location-wrap svg { width: 15px; height: 15px; opacity: 0.5; }
+
+    .location-txt {
+      font-family: 'Syne', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: rgba(255,255,255,0.75);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .tagline-wrap {
+      position: relative;
+      z-index: 10;
+      margin-top: 18px;
+      text-align: center;
+      max-width: 380px;
+      padding: 0 16px;
+    }
+
+    .tagline {
+      font-family: 'DM Sans', sans-serif;
+      font-style: italic;
+      font-weight: 300;
+      font-size: clamp(0.7rem, 1.5vw, 0.82rem);
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.01em;
+      line-height: 1.5;
+    }
+
+    .tagline-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: rgba(255,255,255,0.35);
+      margin-left: 2px;
+      vertical-align: middle;
+      animation: blink 0.8s step-end infinite;
+    }
+
+    .toast-container {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 999999;
+      pointer-events: none;
+    }
+
+    .toast-custom {
+      background: rgba(12,12,14,0.8);
+      backdrop-filter: blur(20px) saturate(1.8);
+      -webkit-backdrop-filter: blur(20px) saturate(1.8);
+      border: 1px solid rgba(255,255,255,0.13);
+      border-radius: 40px;
+      padding: 11px 22px;
+      color: rgba(255,255,255,0.95);
+      font-family: 'Syne', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      box-shadow: 0 10px 36px rgba(0,0,0,0.5);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.3s var(--ease), transform 0.3s var(--ease);
+      pointer-events: none;
+    }
+
+    .toast-custom.visible { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 480px) {
+      .track-info { display: none; }
+      .card { width: clamp(160px, 75vw, 220px); }
+      .nb-cnl-stats { display: none; }
+    }
+
+    @media (max-width: 360px) {
+      .nb-cnl-name { display: none; }
+      .nb-join { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <video id="bg-video" autoplay loop muted playsinline>
+    <source src="assets/1.mp4" type="video/mp4">
+  </video>
+  <div class="noise"></div>
+
+  <audio id="bg-audio" loop preload="auto">
+    <source src="assets/frank ocean ~ nights.mp3" type="audio/mpeg">
+  </audio>
+
+  <div class="toast-container">
+    <div class="toast-custom" id="toast-custom"></div>
+  </div>
+
+  <nav class="navbar">
+    <div class="nb-blur"></div>
+    <div class="nb-inner">
+      <div class="nb-left">
+        <span class="nb-logo">gon</span>
+        <div class="nb-sep"></div>
+        <a href="https://discord.gg/cnl" target="_blank" rel="noopener noreferrer" class="nb-cnl" id="nb-cnl-link">
+          <img class="nb-cnl-icon" id="nb-cnl-icon" src="" alt="central">
+          <div class="nb-cnl-info">
+            <span class="nb-cnl-name">central</span>
+            <span class="nb-cnl-stats" id="nb-cnl-stats"><span class="dot-green"></span>carregando...</span>
+          </div>
+          <span class="nb-join">join</span>
+        </a>
+      </div>
+      <div class="audio-bar">
+        <div class="track-info">
+          <span class="track-name">Nights</span>
+          <span class="track-artist">Frank Ocean</span>
+          <span class="track-time" id="track-time">00:00 / 00:00</span>
+        </div>
+        <button class="btn-play" id="pp" aria-label="play/pause">⏸</button>
+        <input type="range" id="seek" min="0" max="100" step="0.1" value="0" aria-label="progresso">
+        <input type="range" id="vl" min="0" max="0.15" step="0.005" aria-label="volume">
+      </div>
+    </div>
+  </nav>
+
+  <div class="stage" id="stage"></div>
+
+  <div class="location-wrap">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+      <circle cx="12" cy="9" r="2.5"/>
+    </svg>
+    <span class="location-txt">Your Eyes</span>
+  </div>
+
+  <div class="tagline-wrap">
+    <span class="tagline" id="tagline"></span><span class="tagline-cursor" id="tagline-cursor"></span>
+  </div>
+
+  <script>
+    (function() {
+      const USER = {
+        id: '280370001569906690',
+        name: 'gon',
+        tag: 'tlwm',
+        roblox: 'https://www.roblox.com/pt/users/8239645037/profile',
+        spotify: 'https://open.spotify.com/user/21qevmw5dnttfohxx2yllugxi',
+        github: 'https://github.com/00ie',
+        customTag: { label: 'no love' }
+      };
+
+      const TAGLINE = "If you loved me, why did you make me cry?";
+      let taglineIndex = 0;
+      let taglineErasing = false;
+
+      function typeTagline() {
+        const el = document.getElementById('tagline');
+        if (!el) return;
+
+        if (!taglineErasing) {
+          if (taglineIndex <= TAGLINE.length) {
+            el.textContent = TAGLINE.slice(0, taglineIndex);
+            taglineIndex++;
+            setTimeout(typeTagline, taglineIndex === 1 ? 800 : 44);
+          } else {
+            setTimeout(() => { taglineErasing = true; typeTagline(); }, 2800);
+          }
+        } else {
+          if (taglineIndex > 0) {
+            taglineIndex--;
+            el.textContent = TAGLINE.slice(0, taglineIndex);
+            setTimeout(typeTagline, 28);
+          } else {
+            taglineErasing = false;
+            setTimeout(typeTagline, 900);
+          }
+        }
+      }
+
+      setTimeout(typeTagline, 1200);
+
+      let toastTimeout = null;
+
+      function showToast(msg) {
+        const t = document.getElementById('toast-custom');
+        if (!t) return;
+        if (toastTimeout) clearTimeout(toastTimeout);
+        t.className = 'toast-custom';
+        t.textContent = msg;
+        requestAnimationFrame(() => t.classList.add('visible'));
+        toastTimeout = setTimeout(() => t.classList.remove('visible'), 2000);
+      }
+
+      async function loadServerInfo() {
+        const iconEl = document.getElementById('nb-cnl-icon');
+        const statsEl = document.getElementById('nb-cnl-stats');
+        const cached = localStorage.getItem('cnl_server_cache');
+        if (cached) {
+          try {
+            const p = JSON.parse(cached);
+            if (Date.now() - p.ts < 3600000) {
+              if (iconEl) iconEl.src = p.icon;
+              if (statsEl) statsEl.innerHTML = `<span class="dot-green"></span>${p.online} online · ${p.members} membros`;
+              return;
+            }
+          } catch(e) {}
+        }
+        try {
+          const r = await fetch('https://discord.com/api/v9/invites/cnl?with_counts=true');
+          const d = await r.json();
+          if (d.guild) {
+            const id = d.guild.id;
+            const hash = d.guild.icon;
+            const ext = hash && hash.startsWith('a_') ? 'gif' : 'webp';
+            const iconUrl = hash
+              ? `https://cdn.discordapp.com/icons/${id}/${hash}.${ext}?size=64`
+              : '';
+            const online = d.approximate_presence_count || 0;
+            const members = d.approximate_member_count || 0;
+            if (iconEl && iconUrl) iconEl.src = iconUrl;
+            if (statsEl) statsEl.innerHTML = `<span class="dot-green"></span>${online} online · ${members} membros`;
+            localStorage.setItem('cnl_server_cache', JSON.stringify({ icon: iconUrl, online, members, ts: Date.now() }));
+          }
+        } catch(e) {
+          if (iconEl) iconEl.src = 'https://media.discordapp.net/attachments/1511668443949174854/1511783431703494799/a_29d3b4072eeff181ba36b83c14bf3fa7.gif';
+          if (statsEl) statsEl.innerHTML = `<span class="dot-green"></span>central`;
+        }
+      }
+
+      loadServerInfo();
+
+      function getAge(id) {
+        try {
+          const ts = Number((BigInt(id) >> 22n) + 1420070400000n);
+          const d = new Date(ts), n = new Date();
+          if (ts > n.getTime()) return 'nova';
+          let y = n.getFullYear() - d.getFullYear();
+          let m = n.getMonth() - d.getMonth();
+          if (m < 0) { y--; m += 12; }
+          return y > 0 ? `${y}a ${m}m` : `${Math.floor((n - ts) / 86400000)}d`;
+        } catch { return '?'; }
+      }
+
+      function avatarUrl(id, hash) {
+        if (!hash) return `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(id) >> 22n) % 6}.png`;
+        const ext = hash.startsWith('a_') ? 'gif' : 'webp';
+        return `https://cdn.discordapp.com/avatars/${id}/${hash}.${ext}?size=256`;
+      }
+
+      function getActivity(activities = []) {
+        if (!activities.length) return null;
+        const spot = activities.find(a => a.type === 2);
+        if (spot) return { label: 'ouvindo', name: spot.details || spot.name };
+        const game = activities.find(a => a.type === 0);
+        if (game) return { label: 'jogando', name: game.name };
+        const custom = activities.find(a => a.type === 4 && a.state);
+        if (custom) return { label: 'status', name: custom.state };
+        return null;
+      }
+
+      async function fetchLanyard(id) {
+        try {
+          const ctrl = new AbortController();
+          const t = setTimeout(() => ctrl.abort(), 5000);
+          const r = await fetch(`https://api.lanyard.rest/v1/users/${id}`, { signal: ctrl.signal });
+          clearTimeout(t);
+          const j = await r.json();
+          if (j.success && j.data) return j.data;
+          return null;
+        } catch { return null; }
+      }
+
+      const ROBLOX_ICON = `<svg width="14" height="14" viewBox="0 0 512 512" fill="white"><path d="M107.9 65.2L65.2 404.1 404.1 446.8 446.8 107.9zm175.6 204.8l-53.5-7.2 7.2-53.5 53.5 7.2z"/></svg>`;
+      const SPOTIFY_ICON = `<img src="https://cdn.simpleicons.org/spotify/white" alt="Spotify" width="14" height="14">`;
+      const GITHUB_ICON = `<svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/></svg>`;
+
+      function buildCard(data) {
+        const av = data?.discord_user?.avatar
+          ? avatarUrl(USER.id, data.discord_user.avatar)
+          : avatarUrl(USER.id, null);
+        const status = data?.discord_status || 'offline';
+        const act = getActivity(data?.activities);
+        const age = getAge(USER.id);
+
+        let actHTML = '';
+        if (act) {
+          actHTML = `<div class="activity-block"><div class="act-label">${act.label}</div><div class="act-name">${act.name.slice(0,35)}${act.name.length>35?'…':''}</div></div>`;
+        }
+
+        const socials = [
+          USER.roblox ? `<a class="social-btn" href="${USER.roblox}" target="_blank" rel="noopener" title="Roblox">${ROBLOX_ICON}</a>` : '',
+          USER.spotify ? `<a class="social-btn" href="${USER.spotify}" target="_blank" rel="noopener" title="Spotify">${SPOTIFY_ICON}</a>` : '',
+          USER.github ? `<a class="social-btn" href="${USER.github}" target="_blank" rel="noopener" title="GitHub">${GITHUB_ICON}</a>` : ''
+        ].join('');
+
+        return `
+          <div class="glare"></div>
+          <div class="ci">
+            <div class="aw">
+              <div class="av-wrapper">
+                <img class="av" src="${av}" alt="${USER.name}" loading="lazy" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+              </div>
+              <div class="sd ${status}"></div>
+            </div>
+            <div class="nm copyable" data-copy="${USER.tag}">${USER.name}</div>
+            <div class="un copyable" data-copy="${USER.tag}">@${USER.tag}</div>
+            <a class="owner-tag" href="https://discord.gg/cnl" target="_blank" rel="noopener">${USER.customTag.label}</a>
+            <div class="expand">
+              ${actHTML}
+              <div class="acc-age">conta criada há ${age}</div>
+              <div class="social-row">${socials}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      function applyTilt(card) {
+        let vx=0,vy=0,curX=0,curY=0,tarX=0,tarY=0;
+        let isHovered=false, animFrame=null;
+        const stiffness=0.06, damping=0.78, maxRot=12;
+
+        function spring() {
+          const fx=(tarX-curX)*stiffness, fy=(tarY-curY)*stiffness;
+          vx=(vx+fx)*damping; vy=(vy+fy)*damping;
+          curX+=vx; curY+=vy;
+
+          if (!isHovered && Math.abs(vx)<0.0001 && Math.abs(vy)<0.0001) {
+            curX=0; curY=0;
+            card.style.transform='';
+            const g=card.querySelector('.glare');
+            if(g){g.style.opacity='0';g.style.background='';}
+            if(animFrame) cancelAnimationFrame(animFrame);
+            animFrame=null;
+            return;
+          }
+
+          card.style.transform=`perspective(900px) rotateX(${-curY*maxRot}deg) rotateY(${curX*maxRot}deg)`;
+          const g=card.querySelector('.glare');
+          if(g && isHovered){
+            g.style.opacity='1';
+            g.style.background=`radial-gradient(circle at ${(curX+1)*50}% ${(curY+1)*50}%, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.02) 40%, transparent 70%)`;
+          } else if(g){g.style.opacity='0';}
+
+          animFrame=requestAnimationFrame(spring);
+        }
+
+        card.addEventListener('mouseenter',()=>{isHovered=true;if(animFrame)cancelAnimationFrame(animFrame);spring();});
+        card.addEventListener('mousemove',e=>{
+          if(!isHovered) return;
+          const r=card.getBoundingClientRect();
+          tarX=((e.clientX-r.left)/r.width-0.5)*2;
+          tarY=((e.clientY-r.top)/r.height-0.5)*2;
+        });
+        card.addEventListener('mouseleave',()=>{isHovered=false;tarX=0;tarY=0;});
+      }
+
+      async function init() {
+        const stage=document.getElementById('stage');
+        const card=document.createElement('div');
+        card.className='card';
+        card.id='card-main';
+        card.innerHTML=`<div class="ci"><div class="skel" style="width:68px;height:68px;border-radius:50%;margin-bottom:14px;"></div><div class="skel" style="width:65%;height:16px;margin-bottom:6px;"></div><div class="skel" style="width:48%;height:12px;margin-bottom:8px;"></div><div class="skel" style="width:55%;height:14px;"></div></div>`;
+        stage.appendChild(card);
+        applyTilt(card);
+
+        const data=await fetchLanyard(USER.id);
+        card.innerHTML=buildCard(data);
+        applyTilt(card);
+
+        setInterval(async()=>{
+          const d=await fetchLanyard(USER.id);
+          card.innerHTML=buildCard(d);
+          applyTilt(card);
+        },10000);
+      }
+
+      init();
+
+      document.addEventListener('click',e=>{
+        const el=e.target.closest('.copyable');
+        if(!el) return;
+        e.stopPropagation(); e.preventDefault();
+        const val=el.dataset.copy;
+        if(!val) return;
+        navigator.clipboard.writeText(`@${val}`).then(()=>showToast(`@${val} copiado!`)).catch(()=>showToast('erro ao copiar'));
+      });
+
+      const audio=document.getElementById('bg-audio');
+      const pp=document.getElementById('pp');
+      const vl=document.getElementById('vl');
+      const seek=document.getElementById('seek');
+      const trackTime=document.getElementById('track-time');
+      let userPaused=false, isSeeking=false;
+      const savedVol=Math.min(parseFloat(localStorage.getItem('gon_vol')?? '0.07'),0.15);
+      audio.volume=savedVol;
+      vl.value=savedVol;
+
+      function formatTime(seconds) {
+        if(isNaN(seconds) || !isFinite(seconds)) return '00:00';
+        const m=Math.floor(seconds/60);
+        const s=Math.floor(seconds%60);
+        return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+      }
+
+      function updateTimeDisplay() {
+        if(audio.duration && isFinite(audio.duration)) {
+          trackTime.textContent=`${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+        } else {
+          trackTime.textContent='00:00 / 00:00';
+        }
+      }
+
+      function updateUI(){
+        pp.textContent=audio.paused?'▶':'⏸';
+        updateTimeDisplay();
+      }
+
+      audio.addEventListener('loadedmetadata', updateTimeDisplay);
+      audio.addEventListener('timeupdate',()=>{
+        if(!isSeeking && audio.duration) {
+          seek.value=(audio.currentTime/audio.duration)*100;
+        }
+        updateTimeDisplay();
+      });
+
+      seek.addEventListener('input',()=>{
+        if(audio.duration){isSeeking=true;audio.currentTime=(seek.value/100)*audio.duration;updateTimeDisplay();}
+      });
+
+      seek.addEventListener('change',()=>{isSeeking=false;});
+
+      function tryPlay(){
+        if(userPaused) return;
+        audio.play().then(()=>{
+          audio.volume=parseFloat(vl.value)||0.07;
+          updateUI();
+        }).catch(()=>{
+          document.addEventListener('click',function resume(){
+            if(!userPaused) {
+              audio.play().then(()=>{
+                audio.volume=parseFloat(vl.value)||0.07;
+                updateUI();
+              }).catch(()=>{});
+            }
+            document.removeEventListener('click',resume);
+          },{once:true});
+        });
+      }
+
+      audio.addEventListener('ended',()=>{if(!userPaused)tryPlay();});
+
+      pp.addEventListener('click',e=>{
+        e.stopPropagation();
+        if(audio.paused){
+          userPaused=false;
+          audio.play().then(()=>{audio.volume=parseFloat(vl.value)||0.07;updateUI();}).catch(()=>{});
+        } else {
+          userPaused=true;
+          audio.pause();
+          updateUI();
+        }
+      });
+
+      vl.addEventListener('input',e=>{
+        const vol=Math.min(parseFloat(e.target.value),0.15);
+        audio.volume=vol;
+        localStorage.setItem('gon_vol',vol);
+      });
+
+      window.addEventListener('load',()=>{
+        setTimeout(()=>{
+          audio.play().then(()=>{
+            audio.volume=parseFloat(vl.value)||0.07;
+            updateUI();
+          }).catch(()=>{});
+        },500);
+      });
+    })();
+  </script>
+</body>
+
+</html>
