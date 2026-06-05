@@ -1081,20 +1081,35 @@
       });
 
       window.addEventListener('load', () => {
-        setTimeout(() => {
-          if (audio.readyState >= 1) {
-            audioReady = true;
-            updateTimeDisplay();
-          }
-          tryPlay();
-        }, 800);
-      });
+  setTimeout(() => {
+    if (audio.readyState >= 1) {
+      audioReady = true;
+      updateTimeDisplay();
+    }
+    tryPlay();
+  }, 800);
+});
 
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && !userPaused && audio.paused) {
-          tryPlay();
-        }
-      });
+document.addEventListener('click', function startAudioOnInteraction() {
+  if (!userPaused && audio.paused) {
+    tryPlay();
+  }
+  document.removeEventListener('click', startAudioOnInteraction);
+}, { once: false });
+
+document.addEventListener('touchstart', function startAudioOnTouch() {
+  if (!userPaused && audio.paused) {
+    tryPlay();
+  }
+  document.removeEventListener('touchstart', startAudioOnTouch);
+}, { once: false });
+
+document.addEventListener('keydown', function startAudioOnKey() {
+  if (!userPaused && audio.paused) {
+    tryPlay();
+  }
+  document.removeEventListener('keydown', startAudioOnKey);
+}, { once: false });
 
     })();
   </script>
