@@ -661,7 +661,7 @@
         </div>
         <button class="btn-play" id="pp" aria-label="play/pause">⏸</button>
         <input type="range" id="seek" min="0" max="100" step="0.1" value="0" aria-label="progresso">
-        <input type="range" id="vl" min="0" max="0.15" step="0.005" aria-label="volume">
+        <input type="range" id="vl" min="0" max="1" step="0.01" aria-label="volume">
       </div>
     </div>
   </nav>
@@ -928,96 +928,174 @@
         navigator.clipboard.writeText(`@${val}`).then(()=>showToast(`@${val} copiado!`)).catch(()=>showToast('erro ao copiar'));
       });
 
-      const audio=document.getElementById('bg-audio');
-      const pp=document.getElementById('pp');
-      const vl=document.getElementById('vl');
-      const seek=document.getElementById('seek');
-      const trackTime=document.getElementById('track-time');
-      let userPaused=false, isSeeking=false;
-      const savedVol=Math.min(parseFloat(localStorage.getItem('gon_vol')?? '0.07'),0.15);
-      audio.volume=savedVol;
-      vl.value=savedVol;
+      const audio = document.getElementById('bg-audio');
+      const pp = document.getElementById('pp');
+      const vl = document.getElementById('vl');
+      const seek = document.getElementById('seek');
+      const trackTime = document.getElementById('track-time');
+      
+      let userPaused = false;
+      let isSeeking = false;
+      let audioReady = false;
+
+      const savedVol = Math.min(parseFloat(localStorage.getItem('gon_vol') ?? '0.07'), 1);
+      audio.volume = savedVol;
+      vl.value = savedVol;
+      vl.max = 1;
+      vl.step = 0.01;
 
       function formatTime(seconds) {
-        if(isNaN(seconds) || !isFinite(seconds)) return '00:00';
-        const m=Math.floor(seconds/60);
-        const s=Math.floor(seconds%60);
-        return `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        if (isNaN(seconds) || !isFinite(seconds) || seconds < 0) return '00:00';
+        const m = Math.floor(seconds / 60);
+        const s = Math.floor(seconds % 60);
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
       }
 
       function updateTimeDisplay() {
-        if(audio.duration && isFinite(audio.duration)) {
-          trackTime.textContent=`${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
+        if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+          trackTime.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
         } else {
-          trackTime.textContent='00:00 / 00:00';
+          trackTime.textContent = '00:00 / 00:00';
         }
       }
 
-      function updateUI(){
-        pp.textContent=audio.paused?'▶':'⏸';
+      function updateUI() {
+        pp.textContent = audio.paused ? '▶' : '⏸';
         updateTimeDisplay();
       }
 
-      audio.addEventListener('loadedmetadata', updateTimeDisplay);
-      audio.addEventListener('timeupdate',()=>{
-        if(!isSeeking && audio.duration) {
-          seek.value=(audio.currentTime/audio.duration)*100;
+      audio.addEventListener('loadedmetadata', () => {
+        audioReady = true;
+        seek.max = 100;
+        updateTimeDisplay();
+        if (!userPaused) {
+          audio.play().then(() => {
+            updateUI();
+          }).catch(() => {});
+        }
+      });
+
+      audio.addEventListener('loadeddata', () => {
+        audioReady = true;
+        updateTimeDisplay();
+      });
+
+      audio.addEventListener('canplay', () => {
+        audioReady = true;
+        updateTimeDisplay();
+      });
+
+      audio.addEventListener('timeupdate', () => {
+        if (!isSeeking && audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+          seek.value = (audio.currentTime / audio.duration) * 100;
         }
         updateTimeDisplay();
       });
 
-      seek.addEventListener('input',()=>{
-        if(audio.duration){isSeeking=true;audio.currentTime=(seek.value/100)*audio.duration;updateTimeDisplay();}
+      audio.addEventListener('durationchange', () => {
+        updateTimeDisplay();
       });
 
-      seek.addEventListener('change',()=>{isSeeking=false;});
+      audio.addEventListener('play', () => {
+        updateUI();
+      });
 
-      function tryPlay(){
-        if(userPaused) return;
-        audio.play().then(()=>{
-          audio.volume=parseFloat(vl.value)||0.07;
-          updateUI();
-        }).catch(()=>{
-          document.addEventListener('click',function resume(){
-            if(!userPaused) {
-              audio.play().then(()=>{
-                audio.volume=parseFloat(vl.value)||0.07;
-                updateUI();
-              }).catch(()=>{});
-            }
-            document.removeEventListener('click',resume);
-          },{once:true});
-        });
+      audio.addEventListener('pause', () => {
+        updateUI();
+      });
+
+      seek.addEventListener('input', () => {
+        if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+          isSeeking = true;
+          audio.currentTime = (seek.value / 100) * audio.duration;
+          updateTimeDisplay();
+        }
+      });
+
+      seek.addEventListener('change', () => {
+        isSeeking = false;
+        if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
+          audio.currentTime = (seek.value / 100) * audio.duration;
+        }
+      });
+
+      seek.addEventListener('mousedown', () => {
+        isSeeking = true;
+      });
+
+      seek.addEventListener('mouseup', () => {
+        isSeeking = false;
+      });
+
+      seek.addEventListener('touchstart', () => {
+        isSeeking = true;
+      });
+
+      seek.addEventListener('touchend', () => {
+        isSeeking = false;
+      });
+
+      function tryPlay() {
+        if (userPaused) return;
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            updateUI();
+          }).catch(() => {
+            document.addEventListener('click', function resume() {
+              if (!userPaused) {
+                audio.play().then(() => {
+                  updateUI();
+                }).catch(() => {});
+              }
+              document.removeEventListener('click', resume);
+            }, { once: true });
+          });
+        }
       }
 
-      audio.addEventListener('ended',()=>{if(!userPaused)tryPlay();});
+      audio.addEventListener('ended', () => {
+        if (!userPaused) {
+          audio.currentTime = 0;
+          tryPlay();
+        }
+      });
 
-      pp.addEventListener('click',e=>{
+      pp.addEventListener('click', (e) => {
         e.stopPropagation();
-        if(audio.paused){
-          userPaused=false;
-          audio.play().then(()=>{audio.volume=parseFloat(vl.value)||0.07;updateUI();}).catch(()=>{});
+        e.preventDefault();
+        if (audio.paused) {
+          userPaused = false;
+          tryPlay();
         } else {
-          userPaused=true;
+          userPaused = true;
           audio.pause();
           updateUI();
         }
       });
 
-      vl.addEventListener('input',e=>{
-        const vol=Math.min(parseFloat(e.target.value),0.15);
-        audio.volume=vol;
-        localStorage.setItem('gon_vol',vol);
+      vl.addEventListener('input', (e) => {
+        const vol = Math.min(parseFloat(e.target.value), 1);
+        audio.volume = vol;
+        localStorage.setItem('gon_vol', vol);
       });
 
-      window.addEventListener('load',()=>{
-        setTimeout(()=>{
-          audio.play().then(()=>{
-            audio.volume=parseFloat(vl.value)||0.07;
-            updateUI();
-          }).catch(()=>{});
-        },500);
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          if (audio.readyState >= 1) {
+            audioReady = true;
+            updateTimeDisplay();
+          }
+          tryPlay();
+        }, 800);
       });
+
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden && !userPaused && audio.paused) {
+          tryPlay();
+        }
+      });
+
     })();
   </script>
 </body>
