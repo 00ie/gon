@@ -113,86 +113,6 @@
 
     @keyframes blink { 50% { opacity: 0; } }
 
-    .nb-sep { width: 1px; height: 15px; background: rgba(255,255,255,0.1); }
-
-    .nb-cnl {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 24px;
-      padding: 5px 12px 5px 6px;
-      text-decoration: none;
-      transition: all 0.25s var(--ease);
-      backdrop-filter: blur(8px);
-    }
-
-    .nb-cnl:hover {
-      background: rgba(255,255,255,0.12);
-      border-color: rgba(255,255,255,0.22);
-      transform: translateY(-1px);
-    }
-
-    .nb-cnl-icon {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      object-fit: cover;
-      flex-shrink: 0;
-    }
-
-    .nb-cnl-info { display: flex; flex-direction: column; gap: 1px; }
-
-    .nb-cnl-name {
-      font-family: 'Syne', sans-serif;
-      font-size: 0.58rem;
-      font-weight: 700;
-      color: rgba(255,255,255,.88);
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      line-height: 1;
-    }
-
-    .nb-cnl-stats {
-      font-size: 0.48rem;
-      color: var(--muted2);
-      letter-spacing: 0.04em;
-      line-height: 1;
-    }
-
-    .nb-cnl-stats .dot-green {
-      display: inline-block;
-      width: 5px;
-      height: 5px;
-      border-radius: 50%;
-      background: var(--online);
-      margin-right: 3px;
-      vertical-align: middle;
-    }
-
-    .nb-join {
-      display: inline-flex;
-      align-items: center;
-      background: rgba(35,165,89,0.18);
-      border: 1px solid rgba(35,165,89,0.35);
-      border-radius: 20px;
-      padding: 3px 9px;
-      font-family: 'Syne', sans-serif;
-      font-size: 0.48rem;
-      font-weight: 700;
-      color: #4ade80;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      transition: all 0.2s;
-      margin-left: 4px;
-    }
-
-    .nb-cnl:hover .nb-join {
-      background: rgba(35,165,89,0.28);
-      border-color: rgba(35,165,89,0.55);
-    }
-
     .audio-bar { display: flex; align-items: center; gap: 14px; }
 
     .track-info { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
@@ -406,7 +326,7 @@
 
     .un:hover { color: #fff; background: rgba(255,255,255,0.08); }
 
-    .owner-tag {
+    .custom-tag {
       display: inline-flex;
       align-items: center;
       background: rgba(255,255,255,0.1);
@@ -420,13 +340,6 @@
       text-transform: uppercase;
       letter-spacing: 0.08em;
       margin-bottom: 10px;
-      transition: all 0.2s;
-      text-decoration: none;
-    }
-
-    .owner-tag:hover {
-      background: rgba(255,255,255,0.18);
-      border-color: rgba(255,255,255,0.45);
     }
 
     .expand {
@@ -613,12 +526,6 @@
     @media (max-width: 480px) {
       .track-info { display: none; }
       .card { width: clamp(160px, 75vw, 220px); }
-      .nb-cnl-stats { display: none; }
-    }
-
-    @media (max-width: 360px) {
-      .nb-cnl-name { display: none; }
-      .nb-join { display: none; }
     }
   </style>
 </head>
@@ -643,15 +550,6 @@
     <div class="nb-inner">
       <div class="nb-left">
         <span class="nb-logo">gon</span>
-        <div class="nb-sep"></div>
-        <a href="https://discord.gg/cnl" target="_blank" rel="noopener noreferrer" class="nb-cnl" id="nb-cnl-link">
-          <img class="nb-cnl-icon" id="nb-cnl-icon" src="" alt="central">
-          <div class="nb-cnl-info">
-            <span class="nb-cnl-name">central</span>
-            <span class="nb-cnl-stats" id="nb-cnl-stats"><span class="dot-green"></span>carregando...</span>
-          </div>
-          <span class="nb-join">join</span>
-        </a>
       </div>
       <div class="audio-bar">
         <div class="track-info">
@@ -734,44 +632,6 @@
         toastTimeout = setTimeout(() => t.classList.remove('visible'), 2000);
       }
 
-      async function loadServerInfo() {
-        const iconEl = document.getElementById('nb-cnl-icon');
-        const statsEl = document.getElementById('nb-cnl-stats');
-        const cached = localStorage.getItem('cnl_server_cache');
-        if (cached) {
-          try {
-            const p = JSON.parse(cached);
-            if (Date.now() - p.ts < 3600000) {
-              if (iconEl) iconEl.src = p.icon;
-              if (statsEl) statsEl.innerHTML = `<span class="dot-green"></span>${p.online} online · ${p.members} membros`;
-              return;
-            }
-          } catch(e) {}
-        }
-        try {
-          const r = await fetch('https://discord.com/api/v9/invites/cnl?with_counts=true');
-          const d = await r.json();
-          if (d.guild) {
-            const id = d.guild.id;
-            const hash = d.guild.icon;
-            const ext = hash && hash.startsWith('a_') ? 'gif' : 'webp';
-            const iconUrl = hash
-              ? `https://cdn.discordapp.com/icons/${id}/${hash}.${ext}?size=64`
-              : '';
-            const online = d.approximate_presence_count || 0;
-            const members = d.approximate_member_count || 0;
-            if (iconEl && iconUrl) iconEl.src = iconUrl;
-            if (statsEl) statsEl.innerHTML = `<span class="dot-green"></span>${online} online · ${members} membros`;
-            localStorage.setItem('cnl_server_cache', JSON.stringify({ icon: iconUrl, online, members, ts: Date.now() }));
-          }
-        } catch(e) {
-          if (iconEl) iconEl.src = 'https://media.discordapp.net/attachments/1511668443949174854/1511783431703494799/a_29d3b4072eeff181ba36b83c14bf3fa7.gif';
-          if (statsEl) statsEl.innerHTML = `<span class="dot-green"></span>central`;
-        }
-      }
-
-      loadServerInfo();
-
       function getAge(id) {
         try {
           const ts = Number((BigInt(id) >> 22n) + 1420070400000n);
@@ -847,7 +707,7 @@
             </div>
             <div class="nm copyable" data-copy="${USER.tag}">${USER.name}</div>
             <div class="un copyable" data-copy="${USER.tag}">@${USER.tag}</div>
-            <a class="owner-tag" href="https://discord.gg/cnl" target="_blank" rel="noopener">${USER.customTag.label}</a>
+            <span class="custom-tag">${USER.customTag.label}</span>
             <div class="expand">
               ${actHTML}
               <div class="acc-age">conta criada há ${age}</div>
@@ -969,21 +829,12 @@
         seek.max = 100;
         updateTimeDisplay();
         if (!userPaused) {
-          audio.play().then(() => {
-            updateUI();
-          }).catch(() => {});
+          audio.play().then(() => { updateUI(); }).catch(() => {});
         }
       });
 
-      audio.addEventListener('loadeddata', () => {
-        audioReady = true;
-        updateTimeDisplay();
-      });
-
-      audio.addEventListener('canplay', () => {
-        audioReady = true;
-        updateTimeDisplay();
-      });
+      audio.addEventListener('loadeddata', () => { audioReady = true; updateTimeDisplay(); });
+      audio.addEventListener('canplay', () => { audioReady = true; updateTimeDisplay(); });
 
       audio.addEventListener('timeupdate', () => {
         if (!isSeeking && audio.duration && isFinite(audio.duration) && audio.duration > 0) {
@@ -992,17 +843,9 @@
         updateTimeDisplay();
       });
 
-      audio.addEventListener('durationchange', () => {
-        updateTimeDisplay();
-      });
-
-      audio.addEventListener('play', () => {
-        updateUI();
-      });
-
-      audio.addEventListener('pause', () => {
-        updateUI();
-      });
+      audio.addEventListener('durationchange', () => { updateTimeDisplay(); });
+      audio.addEventListener('play', () => { updateUI(); });
+      audio.addEventListener('pause', () => { updateUI(); });
 
       seek.addEventListener('input', () => {
         if (audio.duration && isFinite(audio.duration) && audio.duration > 0) {
@@ -1019,35 +862,18 @@
         }
       });
 
-      seek.addEventListener('mousedown', () => {
-        isSeeking = true;
-      });
-
-      seek.addEventListener('mouseup', () => {
-        isSeeking = false;
-      });
-
-      seek.addEventListener('touchstart', () => {
-        isSeeking = true;
-      });
-
-      seek.addEventListener('touchend', () => {
-        isSeeking = false;
-      });
+      seek.addEventListener('mousedown', () => { isSeeking = true; });
+      seek.addEventListener('mouseup', () => { isSeeking = false; });
+      seek.addEventListener('touchstart', () => { isSeeking = true; });
+      seek.addEventListener('touchend', () => { isSeeking = false; });
 
       function tryPlay() {
         if (userPaused) return;
         const playPromise = audio.play();
         if (playPromise !== undefined) {
-          playPromise.then(() => {
-            updateUI();
-          }).catch(() => {
+          playPromise.then(() => { updateUI(); }).catch(() => {
             document.addEventListener('click', function resume() {
-              if (!userPaused) {
-                audio.play().then(() => {
-                  updateUI();
-                }).catch(() => {});
-              }
+              if (!userPaused) { audio.play().then(() => { updateUI(); }).catch(() => {}); }
               document.removeEventListener('click', resume);
             }, { once: true });
           });
@@ -1055,23 +881,13 @@
       }
 
       audio.addEventListener('ended', () => {
-        if (!userPaused) {
-          audio.currentTime = 0;
-          tryPlay();
-        }
+        if (!userPaused) { audio.currentTime = 0; tryPlay(); }
       });
 
       pp.addEventListener('click', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        if (audio.paused) {
-          userPaused = false;
-          tryPlay();
-        } else {
-          userPaused = true;
-          audio.pause();
-          updateUI();
-        }
+        e.stopPropagation(); e.preventDefault();
+        if (audio.paused) { userPaused = false; tryPlay(); }
+        else { userPaused = true; audio.pause(); updateUI(); }
       });
 
       vl.addEventListener('input', (e) => {
@@ -1081,35 +897,26 @@
       });
 
       window.addEventListener('load', () => {
-  setTimeout(() => {
-    if (audio.readyState >= 1) {
-      audioReady = true;
-      updateTimeDisplay();
-    }
-    tryPlay();
-  }, 800);
-});
+        setTimeout(() => {
+          if (audio.readyState >= 1) { audioReady = true; updateTimeDisplay(); }
+          tryPlay();
+        }, 800);
+      });
 
-document.addEventListener('click', function startAudioOnInteraction() {
-  if (!userPaused && audio.paused) {
-    tryPlay();
-  }
-  document.removeEventListener('click', startAudioOnInteraction);
-}, { once: false });
+      document.addEventListener('click', function startAudioOnInteraction() {
+        if (!userPaused && audio.paused) { tryPlay(); }
+        document.removeEventListener('click', startAudioOnInteraction);
+      }, { once: false });
 
-document.addEventListener('touchstart', function startAudioOnTouch() {
-  if (!userPaused && audio.paused) {
-    tryPlay();
-  }
-  document.removeEventListener('touchstart', startAudioOnTouch);
-}, { once: false });
+      document.addEventListener('touchstart', function startAudioOnTouch() {
+        if (!userPaused && audio.paused) { tryPlay(); }
+        document.removeEventListener('touchstart', startAudioOnTouch);
+      }, { once: false });
 
-document.addEventListener('keydown', function startAudioOnKey() {
-  if (!userPaused && audio.paused) {
-    tryPlay();
-  }
-  document.removeEventListener('keydown', startAudioOnKey);
-}, { once: false });
+      document.addEventListener('keydown', function startAudioOnKey() {
+        if (!userPaused && audio.paused) { tryPlay(); }
+        document.removeEventListener('keydown', startAudioOnKey);
+      }, { once: false });
 
     })();
   </script>
